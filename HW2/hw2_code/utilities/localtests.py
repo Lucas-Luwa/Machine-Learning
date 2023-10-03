@@ -178,7 +178,8 @@ class GMMTests(unittest.TestCase):
                [1.11300859],
                [1.16710435],
                [2.4592084 ]])
-        
+        # print("EX:")
+        # print(expected_logsumexp)
         print("Your logsumexp works within the expected range: ", np.allclose(expected_logsumexp, my_logsumexp))
 
     

@@ -48,10 +48,9 @@ class GMM(object):
         Hint:
             The keepdims parameter could be handy
         """
-        # rowSum = np.log(np.sum(logit,keepdims=True, axis = 1)).reshape(-1,1)
-        # print(rowSum) very broken
-        # return 0
-        raise NotImplementedError
+        maxVal = np.max(logit, axis = 1).reshape(-1,1)
+        rowSum = np.log(np.sum(np.exp(logit-maxVal),keepdims=True, axis = 1)).reshape(-1,1)+maxVal
+        return rowSum
 
     # for undergraduate student
     def normalPDF(self, points, mu_i, sigma_i):  # [5pts]
@@ -95,8 +94,8 @@ class GMM(object):
         Return:
         pi: numpy array of length K, prior
         """
-
-        return NotImplementedError
+        # print(np.full((1, self.K), 1/self.K)[0])
+        return np.full((1, self.K), 1/self.K)[0]
 
     def create_mu(self):
         """
@@ -105,8 +104,8 @@ class GMM(object):
         Return:
         mu: KxD numpy array, the center for each gaussian.
         """
-
-        return NotImplementedError
+        return self.points[np.random.choice(len(self.points), self.K, False)]
+        # return NotImplementedError
     
     def create_sigma(self):
         """
@@ -116,9 +115,11 @@ class GMM(object):
         Return:
         sigma: KxDxD numpy array, the diagonal standard deviation of each gaussian.
             You will have KxDxD numpy array for full covariance matrix case
-        """
-
-        return NotImplementedError
+        """ 
+        rV = np.zeros((self.K, len(self.points[1]), len(self.points[1])))
+        for i in range (0, self.K):
+            rV[i] = np.eye( len(self.points[1]), len(self.points[1]))
+        return np.array(rV)
     
     def _init_components(self, **kwargs):  # [5pts]
 
@@ -134,9 +135,7 @@ class GMM(object):
             Hint: np.random.seed(5) may be used at the start of this function to ensure consistent outputs.
         """
         np.random.seed(5) #Do Not Remove Seed
-
-
-        raise NotImplementedError
+        return self.create_pi(), self.create_mu(), self.create_sigma()
 
     def _ll_joint(self, pi, mu, sigma, full_matrix=FULL_MATRIX, **kwargs):  # [10 pts]
         """
