@@ -167,7 +167,8 @@ class GMMTests(unittest.TestCase):
                [0.39637071, 0.23624673, 0.0996817 , 0.26770086],
                [0.21741805, 0.56913777, 0.05890126, 0.15454293],
                [0.27040961, 0.54778227, 0.01886611, 0.16294201]])
-
+        # print("EX:")
+        # print(expected_softmax)
         print("Your softmax works within the expected range: ", np.allclose(expected_softmax, my_softmax))
 
         # test logsumexp utility
@@ -177,7 +178,7 @@ class GMMTests(unittest.TestCase):
                [1.11300859],
                [1.16710435],
                [2.4592084 ]])
-
+        
         print("Your logsumexp works within the expected range: ", np.allclose(expected_logsumexp, my_logsumexp))
 
     

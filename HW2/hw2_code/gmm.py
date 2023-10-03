@@ -33,8 +33,11 @@ class GMM(object):
         Hint:
             Add keepdims=True in your np.sum() function to avoid broadcast error. 
         """
-
-        raise NotImplementedError
+        maxVal = np.max(logit, axis = 1).reshape(-1,1)
+        raise2E = np.exp(logit - maxVal)
+        rowSum = np.sum(raise2E, keepdims=True, axis = 1).reshape(-1,1)
+        # print(raise2E/rowSum)
+        return raise2E/rowSum
 
     def logsumexp(self, logit):  # [5pts]
         """
@@ -45,7 +48,9 @@ class GMM(object):
         Hint:
             The keepdims parameter could be handy
         """
-
+        # rowSum = np.log(np.sum(logit,keepdims=True, axis = 1)).reshape(-1,1)
+        # print(rowSum) very broken
+        # return 0
         raise NotImplementedError
 
     # for undergraduate student
@@ -61,7 +66,7 @@ class GMM(object):
         Hint:
             np.diagonal() should be handy.
         """
-
+        #No need to implement
         raise NotImplementedError
 
     # for grad students

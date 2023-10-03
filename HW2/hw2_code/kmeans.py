@@ -204,7 +204,7 @@ def rand_statistic(xGroundTruth, xPredicted): # [5 pts]
     denominator = (len(xPredicted)*(len(xPredicted)-1))/2#((N)(N+1))/2 we sub in (N - 1)
     # print(denominator)
     # print(cmp_matrix)
-    return sumUpperTriangular/denominator
+    return float(sumUpperTriangular/denominator)
     # diagsum = np.trace(cmp_matrix1)  # Sum of diagonal elements
     # totsum = np.sum(cmp_matrix1) - diagsum
     # print(diagsum, totsum)
