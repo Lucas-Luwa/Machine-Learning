@@ -60,7 +60,7 @@ class KMeans(object):
         # 3. For each point in the sampled dataset, find the nearest cluster center and record the squared distance to get there.
         for i in range(0, self.K - 1):
         # 4. Examine all the squared distances and take the point with the maximum squared distance as a new cluster center. 
-            sqrtDist = pairwise_dist(ptsPicked, selectedPTs)**2
+            sqrtDist = np.square(pairwise_dist(ptsPicked, selectedPTs))
         # In other words, 
         # we will choose the next center based on the maximum of the minimum calculated distance instead of sampling randomly like in step 2. 
             maxofMin = np.max(np.min(sqrtDist))
@@ -120,7 +120,7 @@ class KMeans(object):
             dist = (currPts - self.centers[i])
             # print(currPts)
             # print(self.centers[i])
-            retV += np.sum(dist ** 2)
+            retV += np.sum(np.square(dist))
         # print(retV)
         return retV
 
@@ -183,6 +183,12 @@ def pairwise_dist(x, y):  # [5 pts]
         # print(x)
         # print(y)
         # raise NotImplementedError
+
+        # xVal = np.sum(np.square(x), axis = 1, keepdims = True)
+        # yVal = np.transpose(np.sum(np.square(y), axis = 1, keepdims = True))
+        # # print(xVal.shape[0], xVal.shape, yVal.shape[0], yVal.shape)
+        # dot = 2 * np.dot(x, y.T)
+
         return np.sqrt(np.maximum(np.sum(x ** 2, axis = 1, keepdims = True) + np.sum(y ** 2, axis = 1) - 2 * np.dot(x, y.T), 0))
 
 def rand_statistic(xGroundTruth, xPredicted): # [5 pts]

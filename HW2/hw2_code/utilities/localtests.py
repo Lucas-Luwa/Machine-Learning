@@ -179,7 +179,7 @@ class GMMTests(unittest.TestCase):
                [1.16710435],
                [2.4592084 ]])
         # print("EX:")
-        # print(expected_logsumexp)
+        print(expected_logsumexp)
         print("Your logsumexp works within the expected range: ", np.allclose(expected_logsumexp, my_logsumexp))
 
     
@@ -289,7 +289,7 @@ class GMMTests(unittest.TestCase):
            3.96140713e-02, 3.55094160e-04, 1.15479475e-02, 5.06551884e-02,
            3.37348839e-04, 6.34219531e-03, 1.20587696e-04, 8.14168432e-03,
            5.76457373e-04, 1.82882581e-03, 1.49926366e-02])
-
+        # print(expected_multinormal_pdf)
         print("Your multinormal pdf works within the expected range: ", np.allclose(expected_multinormal_pdf, my_multinormalpdf))
 
 
@@ -461,6 +461,7 @@ class SemisupervisedTests(unittest.TestCase):
             [ 8.5 ,17.  ,18.   ,1. ],
             [ 1.   ,9.5  ,3.   ,1. ]
         ])
+        print(correct_clean_data)
         clean_data = self.knn_cleaner(incomplete_data, complete_data, 2)
         
         self.assertTrue(clean_data.shape == correct_clean_data.shape,
@@ -488,6 +489,7 @@ class SemisupervisedTests(unittest.TestCase):
             [ 9. ,17.  ,18.   ,1. ],
             [ 9.   ,23  ,24.   ,0. ]
         ])
+        print(correct_clean_data)
         clean_data = mean_clean_data(complete_data)
         
         self.assertTrue(clean_data.shape == correct_clean_data.shape,

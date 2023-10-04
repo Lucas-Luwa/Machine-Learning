@@ -36,7 +36,6 @@ class GMM(object):
         maxVal = np.max(logit, axis = 1).reshape(-1,1)
         raise2E = np.exp(logit - maxVal)
         rowSum = np.sum(raise2E, keepdims=True, axis = 1).reshape(-1,1)
-        # print(raise2E/rowSum)
         return raise2E/rowSum
 
     def logsumexp(self, logit):  # [5pts]
@@ -49,7 +48,12 @@ class GMM(object):
             The keepdims parameter could be handy
         """
         maxVal = np.max(logit, axis = 1).reshape(-1,1)
-        rowSum = np.log(np.sum(np.exp(logit-maxVal),keepdims=True, axis = 1)).reshape(-1,1)+maxVal
+        raisedE = np.exp(logit-maxVal)
+        sumExp = np.sum(raisedE, keepdims=True, axis = 1)
+        # print(logit)
+        rowSum = np.log(sumExp).reshape(-1,1)+maxVal
+        # print(rowSum)
+        # print("X",maxVal)
         return rowSum
 
     # for undergraduate student
@@ -77,15 +81,33 @@ class GMM(object):
             sigma_i: DxD numpy array, the covariance matrix of the ith gaussian.
         Return:
             normal_pdf: (N,) numpy array, the probability density value of N data for the ith gaussian
-
+        Background:
+            In the above calculation, you must avoid computing a $(N,N)$ matrix. Using the above equation for large N will crash your kernel 
+            and/or give you a memory error on Gradescope. Instead, you can do this same operation by calculating $(X-\mu)\Sigma^{-1}$, a $(N,D)$ 
+            matrix, transpose it to be a $(D,N)$ matrix and do an element-wise multiplication with $(X-\mu)^T$, which is also a $(D,N)$ matrix. 
+            Lastly, you will need to sum over the 0 axis to get a $(1,N)$ matrix before proceeding with the rest of the calculation. 
+            This uses the fact that doing an element-wise multiplication and summing over the 0 axis is the same as taking the diagonal of the $(N,N)$ matrix 
+            from the matrix multiplication.
         Hint:
             1. np.linalg.det() and np.linalg.inv() should be handy.
             2. The value in self.D may be outdated and not correspond to the current dataset,
             try using another method involving the current arguments to get the value of D
         """
+        try: sigInv = np.linalg.inv(sigma_i); 
+        except: sigInv = np.linalg.inv(sigma_i + SIGMA_CONST);
+        D = len(points[0])
+        frontConst = 1 / ((2*np.pi) ** ((D)/2))
 
-        raise NotImplementedError
+        sigmaDeterminant =np.linalg.det(sigma_i)
+        sigmaConst = 1 / (np.sqrt(sigmaDeterminant))
 
+        diffTranspose = np.transpose(points - mu_i)
+        diffDotSigma = np.dot((points - mu_i), sigInv)
+        transposeDot = np.transpose(diffDotSigma)
+        sumDotProd = np.sum(transposeDot*diffTranspose, axis = 0)
+        raiseExp = np.exp(-(1/2)*sumDotProd)
+
+        return frontConst*sigmaConst*raiseExp
 
     def create_pi(self):
         """
@@ -94,8 +116,8 @@ class GMM(object):
         Return:
         pi: numpy array of length K, prior
         """
-        # print(np.full((1, self.K), 1/self.K)[0])
-        return np.full((1, self.K), 1/self.K)[0]
+        K = self.K
+        return np.full((1, K), 1/K)[0]
 
     def create_mu(self):
         """
@@ -104,8 +126,10 @@ class GMM(object):
         Return:
         mu: KxD numpy array, the center for each gaussian.
         """
-        return self.points[np.random.choice(len(self.points), self.K, False)]
-        # return NotImplementedError
+        K = self.K
+        D = len(self.points)
+        selectedpts = np.random.choice(D, K, False)
+        return self.points[selectedpts]
     
     def create_sigma(self):
         """
@@ -116,10 +140,14 @@ class GMM(object):
         sigma: KxDxD numpy array, the diagonal standard deviation of each gaussian.
             You will have KxDxD numpy array for full covariance matrix case
         """ 
-        rV = np.zeros((self.K, len(self.points[1]), len(self.points[1])))
-        for i in range (0, self.K):
-            rV[i] = np.eye( len(self.points[1]), len(self.points[1]))
-        return np.array(rV)
+        K = self.K
+        D = len(self.points[1])
+        sigma = np.zeros((K, D, D))
+
+        for i in range (0, K):
+            sigma[i] = np.eye(D, D)
+
+        return np.array(sigma)
     
     def _init_components(self, **kwargs):  # [5pts]
 
@@ -149,15 +177,19 @@ class GMM(object):
         Return:
             ll(log-likelihood): NxK array, where ll(i, k) = log pi(k) + log NormalPDF(points_i | mu[k], sigma[k])
         """
-
         # === graduate implementation
-        #if full_matrix is True:
-            #...
+        K = self.K
+        D = len(self.points)
+        if full_matrix is True:
+            llOutput = np.zeros((K, D))
 
-        # === undergraduate implementation
-        #if full_matrix is False:
-            # ...
-        raise NotImplementedError
+            for i in range(0, K):
+                llOutput[i] = self.multinormalPDF(self.points, mu[i], sigma[i])
+            outputLog = np.log(llOutput + LOG_CONST)
+            transposeOutput = np.transpose(outputLog)
+            piLog = np.log(pi + LOG_CONST)
+
+        return piLog + transposeOutput
 
     def _E_step(self, pi, mu, sigma, full_matrix = FULL_MATRIX , **kwargs):  # [5pts]
         """
@@ -174,14 +206,10 @@ class GMM(object):
             You should be able to do this with just a few lines of code by using _ll_joint() and softmax() defined above.
         """
         # === graduate implementation
-        #if full_matrix is True:
-            # ...
-
-        # === undergraduate implementation
-        #if full_matrix is False:
-            # ...
-
-        raise NotImplementedError
+        if full_matrix is True:
+            llOutput = self._ll_joint(pi, mu, sigma, full_matrix)
+            gamma = self.softmax(llOutput)
+        return gamma
 
     def _M_step(self, gamma, full_matrix=FULL_MATRIX, **kwargs):  # [10pts]
         """
@@ -199,14 +227,28 @@ class GMM(object):
             Undergrads: To simplify your calculation in sigma, make sure to only take the diagonal terms in your covariance matrix
         """
         # === graduate implementation
-        #if full_matrix is True:
-            # ...
+        gammaSum = np.sum(gamma, axis = 0)
+        K = self.K
+        D = len(self.points[0])
 
-        # === undergraduate implementation
-        #if full_matrix is False:
-            # ...
+        if full_matrix is True:
+            mu = np.zeros((K, D))
+            sigma =  np.zeros((K, D, D))
 
-        raise NotImplementedError
+            for i in range (K):
+                gammaVal = gamma[:,i].reshape(-1,1)
+                mu[i] = np.sum(gammaVal * self.points, axis = 0)/gammaSum[i]
+
+                diffM = (self.points - mu[i])*gammaVal
+                diffMtranspose = np.transpose(self.points - mu[i])
+                dotDiffs = np.dot(diffMtranspose, diffM)
+
+                sigma[i] = (dotDiffs)/gammaSum[i]
+                # print(sigma)
+            combinedGamma = np.sum(gamma, axis = 0)
+            pi = (combinedGamma/len(self.points))
+
+        return pi, mu, sigma
 
     def __call__(self, full_matrix=FULL_MATRIX, abs_tol=1e-16, rel_tol=1e-16, **kwargs):  # No need to change
         """

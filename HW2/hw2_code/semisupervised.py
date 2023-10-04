@@ -20,16 +20,26 @@ def complete_(data): # [1pts]
     Return:
         labeled_complete: n x (D+1) array (n <= N) where values contain both complete features and labels
     """
-    raise NotImplementedError
-    
+    # print(data)
+    featureTruths = np.all(~np.isnan(data[:, :-1]), axis=1)
+    labelTruths = ~np.isnan(data[:, -1])
+    rV = data[np.logical_and(featureTruths, labelTruths)]
+    # print(rV)
+    return rV   
+ 
 def incomplete_(data): # [1pts]
     """
     Args:
         data: N x (D+1) numpy array where the last column is the labels
     Return:
         labeled_incomplete: n x (D+1) array (n <= N) where values contain incomplete features but complete labels
-    """    
-    raise NotImplementedError
+    """   
+    # print(data)
+    featureTruths = ~np.all(~np.isnan(data[:, :-1]), axis=1)
+    labelTruths = ~np.isnan(data[:, -1])
+    rV = data[np.logical_and(featureTruths, labelTruths)]
+    # print(rV)
+    return rV    
 
 def unlabeled_(data): # [1pts]
     """
@@ -38,7 +48,10 @@ def unlabeled_(data): # [1pts]
     Return:
         unlabeled_complete: n x (D+1) array (n <= N) where values contain complete features but incomplete labels
     """
-    raise NotImplementedError
+    featureTruths = np.all(~np.isnan(data[:, :-1]), axis=1)
+    labelTruths = np.isnan(data[:, -1])
+    rV = data[np.logical_and(featureTruths, labelTruths)]
+    return rV
 
 class CleanData(object):
     def __init__(self): # No need to implement
@@ -53,7 +66,7 @@ class CleanData(object):
             dist: N x M array, where dist[i, j] is the euclidean distance between
             x[i, :] and y[j, :]
         """
-        raise NotImplementedError
+        return np.sqrt(np.maximum(np.sum(x ** 2, axis = 1, keepdims = True) + np.sum(y ** 2, axis = 1) - 2 * np.dot(x, y.T), 0))
     
     def __call__(self, incomplete_points,  complete_points, K, **kwargs): # [7pts]
         """
@@ -77,8 +90,12 @@ class CleanData(object):
             (6) Do NOT use a for-loop over N_incomplete; you MAY use a for-loop over the M labels and the D features (e.g. omit one feature at a time) 
             (7) You do not need to order the rows of the return array clean_points in any specific manner
         """
-        
-        raise NotImplementedError
+        print(complete_points)
+        print(incomplete_points)
+        print(K)
+
+        return 0
+        # raise NotImplementedError
 
 def mean_clean_data(data): # [2pts]
     """
@@ -91,7 +108,10 @@ def mean_clean_data(data): # [2pts]
         (2) Return all values to max one decimal point
         (3) The labels column will never have NaN values
     """
-    raise NotImplementedError
+    for i in range(len(data[0]) - 1):
+        vals = data[:, i][~np.isnan(data[:, i])]
+        data[np.isnan(data[:, i]), i] = np.mean(vals)
+    return np.round(data, decimals=1)
 
 class SemiSupervised(object):
     def __init__(self): # No need to implement
