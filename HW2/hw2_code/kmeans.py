@@ -44,6 +44,7 @@ class KMeans(object):
         # print(np.random.choice(len(self.points), self.K, False))
         # print("RUNNING ICenter")
         # print(self.points[np.random.choice(len(self.points), self.K, False)])
+
         return self.points[np.random.choice(len(self.points), self.K, False)]
 
     def kmpp_init(self):# [3 pts]
@@ -52,31 +53,18 @@ class KMeans(object):
         Return:
             self.centers : K x D numpy array, the centers.
         """
-        # 1. Sample 1% of the points from the dataset, uniformly at random (UAR) and without replacement. This sample will be the dataset t
-        # he remainder of the algorithm uses to minimize initialization overhead.
-        ptsPicked = self.points[np.random.choice(len(self.points), int(len(self.points)*.01), False)]
-        # 2. From the above sample, select only one random point to be the first cluster center. 
+        K = self.K
+        D = len(self.points)
+        ptsPicked = self.points[np.random.choice(D, int(D*.01), False)]
         selectedPTs = ptsPicked[np.random.choice(len(ptsPicked), 1)]
-        # 3. For each point in the sampled dataset, find the nearest cluster center and record the squared distance to get there.
-        for i in range(0, self.K - 1):
-        # 4. Examine all the squared distances and take the point with the maximum squared distance as a new cluster center. 
-            sqrtDist = np.square(pairwise_dist(ptsPicked, selectedPTs))
-        # In other words, 
-        # we will choose the next center based on the maximum of the minimum calculated distance instead of sampling randomly like in step 2. 
-            maxofMin = np.max(np.min(sqrtDist))
-            # print(maxofMin)
-            updatedCent = ptsPicked[(np.where(maxofMin == sqrtDist)[1][0])]
-            # print(np.where(maxofMin == sqrtDist)[1][0])
-            # print(updatedCent)
-            # print(ptsPicked)
+        while len(selectedPTs) < K:
+            rawData = np.square(pairwise_dist(ptsPicked, selectedPTs))
+            sqrtDist = np.min(rawData, axis=1)
+            maxofMin = np.argmax(sqrtDist)
+            updatedCent = ptsPicked[maxofMin]
             selectedPTs = np.append(selectedPTs,[updatedCent], axis = 0)
-            # print(selecstedPTs)
-        # 5. Repeat 3-4 until all k-centers have been assigned. You may use a loop over K to keep track of the data in each cluster.
-        # print(selectedPTs)
-        # print(selectedPTs.shape[0], selectedPTs.shape[1]) # too many iterations by 1
         return selectedPTs
-
-        # raise NotImplementedError
+        
 
     def update_assignment(self):  # [5 pts]
         """

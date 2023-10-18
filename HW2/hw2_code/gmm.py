@@ -98,7 +98,7 @@ class GMM(object):
         D = len(points[0])
         frontConst = 1 / ((2*np.pi) ** ((D)/2))
 
-        sigmaDeterminant =np.linalg.det(sigma_i)
+        sigmaDeterminant =np.linalg.det(sigma_i + SIGMA_CONST)
         sigmaConst = 1 / (np.sqrt(sigmaDeterminant))
 
         diffTranspose = np.transpose(points - mu_i)
@@ -128,7 +128,7 @@ class GMM(object):
         """
         K = self.K
         D = len(self.points)
-        selectedpts = np.random.choice(D, K, False)
+        selectedpts = np.random.choice(D, K, True)
         return self.points[selectedpts]
     
     def create_sigma(self):
@@ -141,7 +141,8 @@ class GMM(object):
             You will have KxDxD numpy array for full covariance matrix case
         """ 
         K = self.K
-        D = len(self.points[1])
+        # D = len(self.points[1])
+        D = self.points.shape[1]
         sigma = np.zeros((K, D, D))
 
         for i in range (0, K):
@@ -179,17 +180,19 @@ class GMM(object):
         """
         # === graduate implementation
         K = self.K
-        D = len(self.points)
+        N = len(self.points)
         if full_matrix is True:
-            llOutput = np.zeros((K, D))
+            llOutput = np.zeros((N, K))
 
-            for i in range(0, K):
-                llOutput[i] = self.multinormalPDF(self.points, mu[i], sigma[i])
-            outputLog = np.log(llOutput + LOG_CONST)
-            transposeOutput = np.transpose(outputLog)
-            piLog = np.log(pi + LOG_CONST)
+            for i in range( K):
+                llOutput[:, i] = np.log(pi[i] + LOG_CONST)
+                llOutput[:, i] += np.log(self.multinormalPDF(self.points, mu[i], sigma[i]) + LOG_CONST)
+            # outputLog = np.log(llOutput + LOG_CONST)
+            # transposeOutput = np.transpose(outputLog)
+            # piLog = np.log(pi + LOG_CONST)
 
-        return piLog + transposeOutput
+        # return piLog + transposeOutput
+        return llOutput
 
     def _E_step(self, pi, mu, sigma, full_matrix = FULL_MATRIX , **kwargs):  # [5pts]
         """
@@ -236,10 +239,10 @@ class GMM(object):
             sigma =  np.zeros((K, D, D))
 
             for i in range (K):
-                gammaVal = gamma[:,i].reshape(-1,1)
+                gammaVal = gamma[:,i].reshape(len(self.points),1)
                 mu[i] = np.sum(gammaVal * self.points, axis = 0)/gammaSum[i]
 
-                diffM = (self.points - mu[i])*gammaVal
+                diffM = gammaVal*(self.points - mu[i])
                 diffMtranspose = np.transpose(self.points - mu[i])
                 dotDiffs = np.dot(diffMtranspose, diffM)
 

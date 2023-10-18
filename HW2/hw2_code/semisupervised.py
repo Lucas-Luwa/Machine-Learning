@@ -90,11 +90,30 @@ class CleanData(object):
             (6) Do NOT use a for-loop over N_incomplete; you MAY use a for-loop over the M labels and the D features (e.g. omit one feature at a time) 
             (7) You do not need to order the rows of the return array clean_points in any specific manner
         """
-        print(complete_points)
-        print(incomplete_points)
-        print(K)
+        # print(complete_points)
+        # print(incomplete_points)
+        # print(K)
+        labels = np.unique(incomplete_points[:, -1])
+        rV = []
+        for label in labels:
+            # print("Y")
+            incompleteRows = incomplete_points[np.where(incomplete_points[:, -1] == label)]
+            completeRows = complete_points[np.where(complete_points[:, -1] == label)]
+            for features in range(len(complete_points[0]) - 1):
+                #then we fix each one at a time! yay. 
+                featureCol = completeRows[:, features]
+                kVals = np.partition(featureCol, -K)[-K:]
+                repVal = np.mean(kVals)
+                replaceCols = np.isnan(incompleteRows[:, features])
+                incompleteRows[replaceCols, features] = repVal
+            if len(rV) == 0:
+                rV = np.vstack((incompleteRows, completeRows)) 
+            else:
+                rV = np.vstack((incompleteRows, completeRows, rV)) 
+        # print("J")
+        # print(rV)
+        return rV
 
-        return 0
         # raise NotImplementedError
 
 def mean_clean_data(data): # [2pts]
@@ -124,7 +143,11 @@ class SemiSupervised(object):
         Return:
             prob: N x D numpy array where softmax has been applied row-wise to input logit
         """
-        raise NotImplementedError
+        maxVal = np.max(logit, axis = 1).reshape(-1,1)
+        raise2E = np.exp(logit - maxVal)
+        rowSum = np.sum(raise2E, keepdims=True, axis = 1).reshape(-1,1)
+        return raise2E/rowSum
+        # raise NotImplementedError
 
     def logsumexp(self,logit): # [0 pts] - can use same as for GMM
         """
@@ -133,7 +156,11 @@ class SemiSupervised(object):
         Return:
             s: N x 1 array where s[i,0] = logsumexp(logit[i,:])
         """
-        raise NotImplementedError
+        maxVal = np.max(logit, axis = 1).reshape(-1,1)
+        raisedE = np.exp(logit-maxVal)
+        sumExp = np.sum(raisedE, keepdims=True, axis = 1)
+        rowSum = np.log(sumExp).reshape(-1,1)+maxVal
+        return rowSum
     
     def normalPDF(self, logit, mu_i, sigma_i): # [0 pts] - can use same as for GMM
         """
@@ -147,8 +174,8 @@ class SemiSupervised(object):
         Hint: 
             np.diagonal() should be handy.
         """
-        
         raise NotImplementedError
+
     
     def _init_components(self, points, K, **kwargs): # [5 pts] - modify from GMM
         """

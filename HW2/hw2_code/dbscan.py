@@ -18,7 +18,7 @@ class DBSCAN(object):
         """
         C = 0
         vs = set()
-        cluster_idx = np.ones(len(self.dataset))*-8
+        cluster_idx = np.ones(len(self.dataset))*-1
         # for each unvisited point P in dataset X
         for i in range (0, len(self.dataset)):
             if i not in vs:
@@ -29,7 +29,7 @@ class DBSCAN(object):
         #     if sizeof(NeighborPts) < MinPts
                 if len(neighborPts) < self.minPts:
                     #     mark P as NOISE
-                    cluster_idx[i] = -8
+                    cluster_idx[i] = -1
                 else:
                     #     C = next cluster
                     self.expandCluster(i, neighborPts, C, cluster_idx, vs)
