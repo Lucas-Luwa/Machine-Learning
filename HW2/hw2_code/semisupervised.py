@@ -174,7 +174,12 @@ class SemiSupervised(object):
         Hint: 
             np.diagonal() should be handy.
         """
-        raise NotImplementedError
+        D = logit.shape[1]
+        sigma_i = np.diag(np.diag(sigma_i))
+        determinant = np.linalg.det(sigma_i)
+        
+        return (1/np.power(2*np.pi, D/2)) * np.power(determinant, -0.5) * np.exp(np.sum(np.dot((logit - mu_i) * -0.5, np.linalg.inv(sigma_i)).T * (logit - mu_i).T, axis=0))
+        return p1 * p2 * p3
 
     
     def _init_components(self, points, K, **kwargs): # [5 pts] - modify from GMM
@@ -190,6 +195,19 @@ class SemiSupervised(object):
         Hint:
             As explained in the algorithm, you need to calculate the values of mu, sigma and pi based on the labelled dataset
         """
+        pi = np.zeros(K)
+        D = points.shape[1] - 1
+        sigma = np.full((K, D, D), 0, float)
+        mu = np.full((K, D), 0, float)
+        copyPts = points
+        for i in range (K):
+            pts = (copyPts[:, -1] == i)
+            pi[i] = np.sum(pts)/len(copyPts)
+
+            pts2 = (copyPts[pts, :][:, :-1])
+            mu[i] = np.mean(pts2, axis = 0)
+            sigma[i]= np.diag(np.diag(np.cov(pts2, rowvar = False, bias = True)))
+        return pi, mu, sigma
         raise NotImplementedError
 
     def _ll_joint(self, points, pi, mu, sigma, **kwargs): # [0 pts] - can use same as for GMM
@@ -202,6 +220,20 @@ class SemiSupervised(object):
         Return:
             ll(log-likelihood): NxK array, where ll(i, j) = log pi(j) + log NormalPDF(points_i | mu[j], sigma[j])
         """
+        K = self.K
+        N = len(self.points)
+        # if full_matrix is True:
+        llOutput = np.zeros((N, K))
+
+        for i in range( K):
+            llOutput[:, i] = np.log(pi[i] + LOG_CONST)
+            llOutput[:, i] += np.log(self.multinormalPDF(self.points, mu[i], sigma[i]) + LOG_CONST)
+            # outputLog = np.log(llOutput + LOG_CONST)
+            # transposeOutput = np.transpose(outputLog)
+            # piLog = np.log(pi + LOG_CONST)
+
+        # return piLog + transposeOutput
+        return llOutput
         raise NotImplementedError
 
     def _E_step(self, points, pi, mu, sigma, **kwargs): # [0 pts] - can use same as for GMM
@@ -216,6 +248,10 @@ class SemiSupervised(object):
             
         Hint: You should be able to do this with just a few lines of code by using _ll_joint() and softmax() defined above. 
         """
+        # if full_matrix is True:
+        llOutput = self._ll_joint(pi, mu, sigma, full_matrix)
+        gamma = self.softmax(llOutput)
+        return gamma
         raise NotImplementedError
 
     def _M_step(self, points, gamma, **kwargs): # [0 pts] - can use same as for GMM
@@ -230,6 +266,28 @@ class SemiSupervised(object):
             
         Hint:  There are formulas in the slide.
         """
+        gammaSum = np.sum(gamma, axis = 0)
+        K = self.K
+        D = len(self.points[0])
+
+        # if full_matrix is True:
+        mu = np.zeros((K, D))
+        sigma =  np.zeros((K, D, D))
+
+        for i in range (K):
+            gammaVal = gamma[:,i].reshape(len(self.points),1)
+            mu[i] = np.sum(gammaVal * self.points, axis = 0)/gammaSum[i]
+
+            diffM = gammaVal*(self.points - mu[i])
+            diffMtranspose = np.transpose(self.points - mu[i])
+            dotDiffs = np.dot(diffMtranspose, diffM)
+
+            sigma[i] = (dotDiffs)/gammaSum[i]
+            # print(sigma)
+        combinedGamma = np.sum(gamma, axis = 0)
+        pi = (combinedGamma/len(self.points))
+
+        return pi, mu, sigma
         raise NotImplementedError
 
     def __call__(self, points, K, max_iters=100, abs_tol=1e-16, rel_tol=1e-16, **kwargs): # [5 pts] - modify from GMM
@@ -247,6 +305,7 @@ class SemiSupervised(object):
         Return:
             pi, mu, sigma: (1xK np array, KxD numpy array, KxDxD numpy array)
         """
+
         raise NotImplementedError
 
 
@@ -304,5 +363,8 @@ class ComparePerformance(object):
               (2) use sklearn implementation of Gaussion Naive Bayes: https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html
         """
 
-        raise NotImplementedError
+        training = GaussianNB().fit(training_data[:,:-1], training_data[:,-1])
+        return training.score(validation_data[:,:-1],validation_data[:,-1])
+    
+        # raise NotImplementedError
 

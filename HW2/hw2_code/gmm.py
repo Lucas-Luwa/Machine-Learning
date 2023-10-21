@@ -70,7 +70,12 @@ class GMM(object):
             np.diagonal() should be handy.
         """
         #No need to implement
-        raise NotImplementedError
+        D = points.shape[1]
+        sigma_i = np.diag(np.diag(sigma_i))
+        determinant = np.linalg.det(sigma_i)
+        
+        return (1/np.power(2*np.pi, D/2)) * np.power(determinant, -0.5) * np.exp(np.sum(np.dot((points - mu_i) * -0.5, np.linalg.inv(sigma_i)).T * (points - mu_i).T, axis=0))
+        # raise NotImplementedError
 
     # for grad students
     def multinormalPDF(self, points, mu_i, sigma_i):  # [5pts]
@@ -192,6 +197,12 @@ class GMM(object):
             # piLog = np.log(pi + LOG_CONST)
 
         # return piLog + transposeOutput
+        else:
+            llOutput = np.zeros((N, K))
+
+            for i in range( K):
+                llOutput[:, i] = np.log(pi[i] + LOG_CONST)
+                llOutput[:, i] += np.log(self.normalPDF(self.points, mu[i], sigma[i]) + LOG_CONST)
         return llOutput
 
     def _E_step(self, pi, mu, sigma, full_matrix = FULL_MATRIX , **kwargs):  # [5pts]
@@ -212,6 +223,10 @@ class GMM(object):
         if full_matrix is True:
             llOutput = self._ll_joint(pi, mu, sigma, full_matrix)
             gamma = self.softmax(llOutput)
+        else:
+            llOutput = self._ll_joint(pi, mu, sigma, full_matrix)
+            gamma = self.softmax(llOutput)  
+
         return gamma
 
     def _M_step(self, gamma, full_matrix=FULL_MATRIX, **kwargs):  # [10pts]
@@ -235,6 +250,22 @@ class GMM(object):
         D = len(self.points[0])
 
         if full_matrix is True:
+            mu = np.zeros((K, D))
+            sigma =  np.zeros((K, D, D))
+
+            for i in range (K):
+                gammaVal = gamma[:,i].reshape(len(self.points),1)
+                mu[i] = np.sum(gammaVal * self.points, axis = 0)/gammaSum[i]
+
+                diffM = gammaVal*(self.points - mu[i])
+                diffMtranspose = np.transpose(self.points - mu[i])
+                dotDiffs = np.dot(diffMtranspose, diffM)
+
+                sigma[i] = (dotDiffs)/gammaSum[i]
+                # print(sigma)
+            combinedGamma = np.sum(gamma, axis = 0)
+            pi = (combinedGamma/len(self.points))
+        else:
             mu = np.zeros((K, D))
             sigma =  np.zeros((K, D, D))
 
