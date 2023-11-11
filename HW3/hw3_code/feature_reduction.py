@@ -20,8 +20,26 @@ class FeatureReduction(object):
             forward_list: (python list) contains significant features. Each feature
             name is a string
         """
+        sigfig = []
+        features = data.columns
+        
+        while len(features) > 0:
 
-        raise NotImplementedError
+            pVal = []
+            for ft in features:
+                X = data[[ft] + sigfig]
+                X = sm.add_constant(X) 
+
+                model = sm.OLS(target, X).fit()
+                pVal.append((ft, model.pvalues[ft]))
+            bestFeat, bestPVal = sorted(pVal, key=lambda x: x[1])[0]
+            #print(pVal)
+            if significance_level> bestPVal :
+                features = [feat for feat in features if feat != bestFeat]
+                sigfig.append(bestFeat)
+            else: break
+        
+        return sigfig
 
     @staticmethod
     def backward_elimination(
@@ -36,5 +54,15 @@ class FeatureReduction(object):
             backward_list: (python list) contains significant features. Each feature
             name is a string
         """
+
+        ft = data.columns.tolist()
+        while len(ft) > 0:
+            pval = sm.OLS(target, sm.add_constant(data[ft])).fit().pvalues[1:]
+            maxP = pval.max()
+            if maxP > significance_level:
+                rmFt = ft[pval.argmax()]
+                ft.remove(rmFt)
+            else: break
+        return ft
 
         raise NotImplementedError
