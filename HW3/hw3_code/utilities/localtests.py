@@ -141,6 +141,11 @@ class TestImgCompression(unittest.TestCase):
         # compute SVD for color image
         U, S, V = ic.svd(test_ic.color_image)
 
+        # print("U", test_ic.Uc)
+        # print("S", test_ic.Sc)
+        # print("V", test_ic.Vc)
+        # print( test_ic.Uc.shape, test_ic.Sc.shape, test_ic.Vc.shape)
+
         # check U, S, V
         self.assertEqual(np.allclose(U, test_ic.Uc), True, "U is incorrect")
         self.assertEqual(np.allclose(S, test_ic.Sc), True, "S is incorrect")
@@ -221,7 +226,7 @@ class TestImgCompression(unittest.TestCase):
 
         # compute recovered variance proportion
         rvp = ic.recovered_variance_proportion(test_ic.Sc, 2)
-
+        # print("EX", test_ic.rvp_c)
         # check recovered variance proportion
         self.assertEqual(
             np.allclose(rvp, test_ic.rvp_c),
@@ -437,6 +442,7 @@ class TestRegression(unittest.TestCase):
         reg = Regression()
         test_reg = Regression_Test()
 
+        # print(test_reg.construct_poly)
         poly_feat_test = np.allclose(
             reg.construct_polynomial_feats(test_reg.x_all, 2), test_reg.construct_poly
         )
@@ -509,6 +515,9 @@ class TestRegression(unittest.TestCase):
         linear_SGD, linear_SGD_loss = reg.linear_fit_SGD(
             test_reg.x_all_feat, test_reg.y_all, 1
         )
+        # print("X")
+        # print(test_reg.linear_SGD)
+        # print(test_reg.linear_SGD_loss)
         lsgd_test = np.allclose(linear_SGD, test_reg.linear_SGD)
         lsgd_loss_test = np.allclose(linear_SGD_loss, test_reg.linear_SGD_loss)
         self.assertTrue(lsgd_test, "Weights are incorrect")
@@ -560,10 +569,11 @@ class TestRegression(unittest.TestCase):
 
         reg = Regression()
         test_reg = Regression_Test()
-
         ridge_SGD, ridge_SGD_loss = reg.ridge_fit_SGD(
             test_reg.x_all_feat, test_reg.y_all, 20, 1
         )
+        # print(test_reg.ridge_SGD)
+        # print(test_reg.ridge_SGD_loss)
         rsgd_test = np.allclose(ridge_SGD, test_reg.ridge_SGD)
         rsgd_loss_test = np.allclose(ridge_SGD_loss, test_reg.ridge_SGD_loss)
         self.assertTrue(rsgd_test, "Weights are incorrect")
@@ -579,7 +589,8 @@ class TestRegression(unittest.TestCase):
 
         reg = Regression()
         test_reg = Regression_Test()
-
+        # print(test_reg.cross_val)
+        # print("HI")
         ridge_cv_test = np.allclose(
             reg.ridge_cross_validation(test_reg.x_all_feat, test_reg.y_all, 3),
             test_reg.cross_val,

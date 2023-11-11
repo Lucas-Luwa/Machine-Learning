@@ -118,7 +118,7 @@ class Plotter:
         rndr_type = "jupyterlab+png"
         pio.renderers.default = rndr_type
         # Render types : 'browser', 'png', 'plotly_mimetype', 'jupyterlab', pdf
-
+        # print("1")
         df = pd.DataFrame(
             {
                 "feature1": x_all[:, 0],
@@ -127,10 +127,10 @@ class Plotter:
                 "best_fit": np.squeeze(p),
             }
         )
-
+        # print("2")
         # Initialize the figure
         fig = go.Figure()
-
+        # print("3")
         # Add scatter points to the figure with a legend name
         fig.add_scatter3d(
             x=df["feature1"],
@@ -140,7 +140,7 @@ class Plotter:
             marker=dict(color="blue", opacity=0.12),
             name="Data Points",
         )
-
+        # print("4")
         # Add the line of best fit to the figure
         fig.add_scatter3d(
             x=df["feature1"],
@@ -150,7 +150,7 @@ class Plotter:
             line=dict(color="red", width=7),
             name="Line of Best Fit",
         )
-
+        # print("5")
         # Add watermark, if not the student version
         if not self.STUDENT_VERSION:
             fig.add_annotation(
@@ -165,7 +165,7 @@ class Plotter:
                 align="center",
                 textangle=-self.EO_ROT,
             )
-
+        # print("6")
         # Update the layout
         fig.update_layout(
             title="All Simulated Datapoints",
@@ -179,10 +179,13 @@ class Plotter:
             width=1000,
             autosize=True,
         )
+        # print("7")
         # Show the figure
         config = {"scrollZoom": True}
+        # print("7A")
+        # fig.show(config=config, renderer = "notebook")
         fig.show(config=config)
-
+        # print("8")
         if self.print_images:
             fig.write_image("outputs/Data_Regression_Truth.png")
             img = mpimg.imread("outputs/Data_Regression_Truth.png")

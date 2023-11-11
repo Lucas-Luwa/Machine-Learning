@@ -59,7 +59,6 @@ class SVDRecommender(object):
             V_k: (kXM) numpy array containing k features for each movie
         """
 
-        raise NotImplementedError
 
     def predict(
         self,

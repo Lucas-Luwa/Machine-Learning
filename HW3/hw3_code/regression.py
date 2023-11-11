@@ -16,7 +16,10 @@ class Regression(object):
         Return:
             A float value
         """
-        raise NotImplementedError
+         #√[Σ(actual - predicted)^2 / n]
+        pwr = np.power(pred - label, 2)
+        mean = np.mean(pwr)
+        return np.sqrt(mean)
 
     def construct_polynomial_feats(
         self, x: np.ndarray, degree: int
@@ -63,8 +66,15 @@ class Regression(object):
                 [ x_{3,1}^3  x_{3,2}^3]]]
 
         """
-
-        raise NotImplementedError
+        if x.ndim == 1:
+            features = np.ones((x.shape[0], degree + 1))
+            for deg in range(degree + 1):
+                features[:,deg] = np.power(x, deg)
+        else:
+            features = np.ones((x.shape[0], degree + 1, x.shape[1]))
+            for deg in range(degree + 1):
+                features[:,deg,:] = np.power(x, deg)
+        return features
 
     def predict(self, xtest: np.ndarray, weight: np.ndarray) -> np.ndarray:  # [5pts]
         """
@@ -78,7 +88,7 @@ class Regression(object):
         Return:
             prediction: (N,1) numpy array, the predicted labels
         """
-        raise NotImplementedError
+        return np.dot(xtest, weight)
 
     # =================
     # LINEAR REGRESSION
@@ -100,8 +110,7 @@ class Regression(object):
         Hints:
             - For pseudo inverse, you can use numpy linear algebra function (np.linalg.pinv)
         """
-
-        raise NotImplementedError
+        return np.dot(np.linalg.pinv(xtrain), ytrain)
 
     def linear_fit_GD(
         self,
@@ -124,7 +133,16 @@ class Regression(object):
             weight: (1+D,1) numpy array, the weights of linear regression model
             loss_per_epoch: (epochs,) list of floats, rmse of each epoch
         """
-        raise NotImplementedError
+        weight = np.zeros((xtrain.shape[1], 1))
+        loss_per_epoch = []
+
+        for nmv in range(epochs):
+            diff = (ytrain - np.dot(xtrain, weight))
+            weight += (np.dot(xtrain.T, diff) * learning_rate) / xtrain.shape[0]
+            pred = self.predict(xtrain, weight)
+            rmseVal = self.rmse(pred , ytrain)
+            loss_per_epoch.append(rmseVal)
+        return weight, loss_per_epoch
 
     def linear_fit_SGD(
         self,
@@ -157,8 +175,21 @@ class Regression(object):
         weight for one datapoint at a time, but for each epoch, you'll
         need to go through all of the points.
         """
-        raise NotImplementedError
+        loss_per_step = []
+        weight = np.zeros((xtrain.shape[1], 1))
 
+        for nmv in range(epochs):
+            for j in range(xtrain.shape[0]):
+                yTrainJ = ytrain[j]
+                xTrainJ = xtrain[j]
+                val = yTrainJ - np.dot(xTrainJ, weight)
+                weight += learning_rate * np.outer(xTrainJ, val)
+
+                pred = self.predict(xtrain, weight)
+                rmseVal = self.rmse(pred , ytrain)
+                loss_per_step.append(rmseVal)
+
+        return weight, loss_per_step
     # =================
     # RIDGE REGRESSION
     # =================
@@ -181,8 +212,16 @@ class Regression(object):
             - For pseudo inverse, you can use numpy linear algebra function (np.linalg.pinv)
             - You should adjust your I matrix to handle the bias term differently than the rest of the terms
         """
+        N, D = xtrain.shape #Only use D
 
-        raise NotImplementedError
+        idMat = np.identity(D)
+        idMat[0, 0] = 0 
+        xDotxtrain = np.dot(xtrain.T, xtrain)
+        xDotytrain = np.dot(xtrain.T, ytrain)
+
+        rterm = c_lambda * idMat
+        weight = np.dot(np.linalg.inv(xDotxtrain + rterm), xDotytrain)
+        return weight
 
     def ridge_fit_GD(
         self,
@@ -211,7 +250,18 @@ class Regression(object):
         Hints:
             - You should avoid applying regularization to the bias term in the gradient update
         """
-        raise NotImplementedError
+        weight = np.zeros((xtrain.shape[1], 1))
+        loss_per_epoch = []
+        # print("HI")
+        for nmv in range(epochs):
+            Dotdiff = np.dot(xtrain.T, (ytrain - np.dot(xtrain, weight)))
+            weight[1:] -= weight[1:] * learning_rate * c_lambda/xtrain.shape[0]
+            weight += Dotdiff * learning_rate / xtrain.shape[0]
+            pred = self.predict(xtrain, weight)
+
+            rmseVal = self.rmse(pred , ytrain)
+            loss_per_epoch.append(rmseVal)
+        return weight, loss_per_epoch
 
     def ridge_fit_SGD(
         self,
@@ -246,7 +296,23 @@ class Regression(object):
             a time. For each epoch, you'll need to go through all of the points.
             - You should avoid applying regularization to the bias term in the gradient update
         """
-        raise NotImplementedError
+        loss_per_step = []
+        weight = np.zeros((xtrain.shape[1], 1))
+
+        for nmv in range(epochs):
+            for j in range(xtrain.shape[0]):
+                yTrainJ = ytrain[j]
+                xTrainJ = xtrain[j]
+                val = yTrainJ - np.dot(xTrainJ, weight)
+                v2 =  learning_rate * np.outer(xTrainJ, val)
+                weight[1:] -= weight[1:] * learning_rate * c_lambda/xtrain.shape[0]
+                weight += v2
+
+                pred = self.predict(xtrain, weight)
+                rmseVal = self.rmse(pred , ytrain)
+                loss_per_step.append(rmseVal)
+
+        return weight, loss_per_step
 
     def ridge_cross_validation(
         self, X: np.ndarray, y: np.ndarray, kfold: int = 10, c_lambda: float = 100
@@ -271,7 +337,21 @@ class Regression(object):
                 split X and y into 10 equal-size folds
                 use 90 percent for training and 10 percent for test
         """
-        raise NotImplementedError
+        rV = []
+        for i in range(kfold):
+            ypartition = np.split(y, kfold)
+            xpartition = np.split(X, kfold)
+            xpred = xpartition.pop(i)
+            ypred = ypartition.pop(i)
+            xTr = np.concatenate(xpartition)
+            yTr = np.concatenate(ypartition)
+
+            temp = self.ridge_fit_closed(xTr, yTr, c_lambda)
+
+            # print(temp.shape); print("X"); print(xpred.shape)
+            predVal = self.predict(xpred, temp)
+            rV.append(self.rmse(predVal, ypred))
+        return rV
 
     def hyperparameter_search(
         self, X: np.ndarray, y: np.ndarray, lambda_list: List[float], kfold: int

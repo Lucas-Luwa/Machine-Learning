@@ -15,7 +15,8 @@ class LogisticRegression(object):
         Return:
             (N, D) numpy array, whose values are transformed by sigmoid function to the range (0, 1)
         """
-        raise NotImplementedError
+
+        return 1 / (1 + np.exp(-s))
 
     def bias_augment(self, x: np.ndarray) -> np.ndarray:  # [3pts]
         """Prepend a column of 1's to the x matrix
@@ -26,8 +27,7 @@ class LogisticRegression(object):
         Returns:
             x_aug: (np.ndarray): (N, D + 1) numpy array, N data points each with a column of 1s and D features
         """
-
-        raise NotImplementedError
+        return np.hstack((np.ones((x.shape[0], 1)), x))
 
     def predict_probs(
         self, x_aug: np.ndarray, theta: np.ndarray
@@ -43,8 +43,7 @@ class LogisticRegression(object):
             h_x (np.ndarray): (N, 1) numpy array, the predicted probabilities of each data point being the positive label
                 this result is h(x) = P(y = 1 | x)
         """
-
-        raise NotImplementedError
+        return self.sigmoid(np.matmul(x_aug, theta))
 
     def predict_labels(self, h_x: np.ndarray) -> np.ndarray:  # [2pts]
         """Given model weights theta and input data points x, calculate the logistic regression model's
@@ -57,8 +56,12 @@ class LogisticRegression(object):
             y_hat (np.ndarray): (N, 1) numpy array, the predicted labels of each data point
                 0 for negative label, 1 for positive label
         """
-
-        raise NotImplementedError
+        yVals = np.zeros((h_x.shape[0] , 1), dtype=int)
+        
+        for i in range(h_x.shape[0] ):
+            yVals[i] = 1  if h_x[i] >= 0.5 else 0 
+        
+        return yVals
 
     def loss(self, y: np.ndarray, h_x: np.ndarray) -> float:  # [3pts]
         """Given the true labels y and predicted probabilities h_x, calculate the
@@ -71,7 +74,8 @@ class LogisticRegression(object):
             loss (float)
         """
 
-        raise NotImplementedError
+        N = y.shape[0] 
+        return -1/N * np.sum(y * np.log(h_x) + (1 - y) * np.log(1 - h_x))
 
     def gradient(
         self, x_aug: np.ndarray, y: np.ndarray, h_x: np.ndarray
@@ -91,8 +95,10 @@ class LogisticRegression(object):
 
         HINT: Matrix multiplication takes care of the summation part of the definition.
         """
-
-        raise NotImplementedError
+        N = x_aug.shape[0]
+        # print((h_x - y).T.shape)
+        # print(x_aug.shape)
+        return (np.dot((h_x - y).T, x_aug) / N).T
 
     def accuracy(self, y: np.ndarray, y_hat: np.ndarray) -> float:  # [2pts]
         """Calculate the accuracy of the predicted labels y_hat
@@ -104,8 +110,11 @@ class LogisticRegression(object):
         Return:
             accuracy of the given parameters theta on data x, y
         """
-
-        raise NotImplementedError
+        numerator = 0
+        denominator = y.shape[0]
+        for i in range (denominator):
+            if y_hat[i] == y[i]: numerator +=1;
+        return numerator/denominator
 
     def evaluate(
         self, x: np.ndarray, y: np.ndarray, theta: np.ndarray
@@ -123,8 +132,11 @@ class LogisticRegression(object):
         Returns:
             Tuple[float, float]: loss, accuracy
         """
-
-        raise NotImplementedError
+        h_x = self.predict_probs(self.bias_augment(x), theta)
+        yh = self.predict_labels(h_x)
+        accuracy = self.accuracy(y, yh)
+        loss = self.loss(y,h_x)
+        return loss, accuracy
 
     def fit(
         self,
@@ -170,7 +182,13 @@ class LogisticRegression(object):
         ### START STUDENT CODE ###
         ##########################
 
-        raise NotImplementedError
+        xAug = self.bias_augment(x_train)
+        theta = np.zeros((x_train.shape[1] + 1, 1))
+        for i in range(epochs):
+            h_x = self.predict_probs(xAug, theta)
+            grd = self.gradient(xAug, y_train, h_x)
+            theta -= grd*lr
+            if i % 100 == 0: self.update_evaluation_lists(x_train, y_train, x_val, y_val, theta, i)
 
         ########################
         ### END STUDENT CODE ###

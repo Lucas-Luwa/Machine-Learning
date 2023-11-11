@@ -36,7 +36,7 @@ class PCA(object):
             self.S: (min(N,D), ) numpy array
             self.V: (min(N,D), D) numpy array
         """
-        raise NotImplementedError
+        self.U, self.S, self.V = np.linalg.svd(X - np.mean(X, axis = 0), full_matrices = False)
 
     def transform(self, data: np.ndarray, K: int = 2) -> np.ndarray:  # 2 pts
         """
@@ -52,7 +52,7 @@ class PCA(object):
 
         Hint: Make sure you remember to first center your data by subtracting the mean of each feature.
         """
-        raise NotImplementedError
+        return np.matmul(np.matmul(self.U, np.matmul(np.diag(self.S), self.V)), self.V.T[:,:K])
 
     def transform_rv(
         self, data: np.ndarray, retained_variance: float = 0.99
@@ -73,8 +73,22 @@ class PCA(object):
         Hint: Make sure you remember to first center your data by subtracting the mean of each feature.
 
         """
-        raise NotImplementedError
+        data2 = np.matmul(self.U, np.matmul(np.diag(self.S), self.V))
 
+        k = 0
+        lower = np.sum(np.power(self.S, 2))
+        upper = np.sum(np.power(self.S[:k], 2))
+        var = upper/lower
+
+        # Determine the number of features (K) to retain the specified variance
+        ind = 0
+        while ind < data.shape[0] and var < retained_variance:
+            k+=1
+            upper = np.sum(np.power(self.S[:k], 2))
+            var = upper/lower
+            ind +=1
+        return np.matmul(data2, self.V.T[:,:k])
+    
     def get_V(self) -> np.ndarray:
         """Getter function for value of V"""
 
@@ -93,5 +107,11 @@ class PCA(object):
 
         Return: None
         """
-
-        raise NotImplementedError
+        self.fit(X)
+        Xt = self.transform(X, K = 2)
+        for i in y:
+            mtch = np.where(i == y)
+            for match in mtch:
+                plt.scatter(Xt[match][:,0],Xt[match][:,1])
+        plt.legend()
+        plt.show()
