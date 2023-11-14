@@ -44,7 +44,7 @@ class NeuralNet:
         
         # NEURAL NETWORK INFORMATION
         self.learning_rate=lr # learning rate
-        self.sample_count = self.y.shape[1] # number of training samples we have
+        self.sample_count = self.y.shape[0] # number of training samples we have
         self._estimator_type = 'regression'
         self.neural_net_type = "Leaky Relu -> Softmax"
 
