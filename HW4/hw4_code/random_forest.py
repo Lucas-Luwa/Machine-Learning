@@ -29,17 +29,17 @@ class RandomForest(object):
         Hint 1: Please use np.random.choice. First get the row_idx first, and then second get the col_idx.
         Hint 2:  If you are getting a Test Failed: 'bool' object has no attribute 'any' error, please try flooring, or converting to an int, the number of columns needed for col_idx. Using np.ceil() can cause an autograder error.
         """
-        raise NotImplementedError
+        # raise NotImplementedError
     
         if random_seed is not None:             # DO NOT REMOVE
             np.random.seed(seed = random_seed)  # DO NOT REMOVE
 
         ############# Get Row Indices First - write your code below #####################
-        row_idx = None # TODO
+        row_idx = np.random.choice(num_training, size=int(num_training), replace=True)
         #################################################################################
 
         ############# Get Col Indices Second - write your code below ####################
-        col_idx = None # TODO
+        col_idx = np.random.choice(num_features, size=int(num_features *self.max_features), replace=False)
         ##################################################################################
         return row_idx, col_idx
 
@@ -68,8 +68,13 @@ class RandomForest(object):
             None. Calling this function should train the decision trees held in self.decision_trees
         """
         # TODO
-        raise NotImplementedError
-    
+        
+        self.bootstrapping(len(X), len(X[0]))
+        for i in range (self.n_estimators):
+            xComp = X[self.bootstraps_row_indices[i]][:, self.feature_indices[i]]
+            yComp = y[self.bootstraps_row_indices[i]]
+            self.decision_trees[i].fit(xComp, yComp)
+            
 
     def OOB_score(self, X, y):
         # helper function. You don't have to modify it
@@ -119,8 +124,8 @@ class RandomForest(object):
             max_depth: int number (e.g 4)
             max_features: a float between 0.0-1.0 (e.g 0.1)
         """
-        raise NotImplementedError
-        n_estimators = 2 # TODO
-        max_depth = 4 # TODO
-        max_features = 0.1 # TODO
+        # raise NotImplementedError
+        n_estimators = 3 # TODO
+        max_depth = 10 # TODO
+        max_features = 0.8 # TODO
         return n_estimators, max_depth, max_features

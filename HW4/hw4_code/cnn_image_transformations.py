@@ -14,7 +14,14 @@ def create_training_transformations():
     RETURN: torchvision.transforms.v2.Compose object
     """
     # TODO
-    raise NotImplementedError
+#     raise NotImplementedError
+    transformations = [
+        v2.ToImage(),
+        v2.ToDtype(torch.float32,  scale=True),
+        v2.RandomHorizontalFlip(p=0.2),
+        v2.RandomApply([v2.RandomRotation(degrees=(-36, 36))], p=0.2)
+    ]
+    return v2.Compose(transformations)
 
 
 def create_testing_transformations():
@@ -28,4 +35,8 @@ def create_testing_transformations():
     RETURN: torchvision.transforms.v2.Compose object
     """
     # TODO
-    raise NotImplementedError
+    transformations = [
+        v2.ToImage(),
+        v2.ToDtype(torch.float32,  scale=True)
+    ]
+    return v2.Compose(transformations)

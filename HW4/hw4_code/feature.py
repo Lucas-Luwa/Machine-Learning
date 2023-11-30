@@ -9,5 +9,9 @@ def create_nl_feature(X):
                 additional features added to X such that it
                 can classify the points in the dataset.
     '''
-    # TODO
-    raise NotImplementedError
+    # NotImplementedError    
+    X2 = X.copy()
+    for i in range(2, 6):
+        X2 = np.concatenate((X2, np.power(X, i)), axis=1)
+    
+    return X2

@@ -1,17 +1,25 @@
-import numpy as np 
+import numpy as np
 
-'''
+"""
 We are going to use the California housing dataset provided by sklearn
 https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_california_housing.html
 to train a 2-layer fully connected neural net. We are going to build the neural network from scratch.
-'''
+"""
 
 
 class NeuralNet:
-
-    def __init__(self, y, use_dropout, use_momentum, lr = 0.01, batch_size=64, momentum=0.5, dropout_prob=0.3):
-        '''
-        This method initializes the class, it is implemented for you. 
+    def __init__(
+        self,
+        y,
+        use_dropout,
+        use_momentum,
+        lr=0.01,
+        batch_size=64,
+        momentum=0.5,
+        dropout_prob=0.3,
+    ):
+        """
+        This method initializes the class, it is implemented for you.
         Args:
             y (np.ndarray): labels
             use_dropout (bool): flag to enable dropout
@@ -20,12 +28,12 @@ class NeuralNet:
             batch_size (int): batch size to use for training
             momentum (float): momentum to use for training
             dropout_prob (float): dropout probability
-        '''
-        self.y=y # ground truth labels
+        """
+        self.y = y  # ground truth labels
 
         # OTHER HYPERPARAMTERS
-        self.y_hat=np.zeros((1,self.y.shape[1])) # estimated labels
-        self.dimensions = [8, 15, 3] # dimensions of different layers
+        self.y_hat = np.zeros((self.y.shape[0], 3))  # estimated labels
+        self.dimensions = [8, 15, 3]  # dimensions of different layers
         self.alpha = 0.05
 
         # DROPOUT
@@ -33,58 +41,61 @@ class NeuralNet:
         self.dropout_prob = dropout_prob
 
         # PARAMETERS
-        self.parameters = {} # dictionary for different layer variables
-        self.cache = {} # cache for holding variables during forward propagation to use them in back prop
-        self.loss = [] # list to store loss values
-        self.batch_y = [] # list of y batched numpy arrays
+        self.parameters = {}  # dictionary for different layer variables
+        self.cache = (
+            {}
+        )  # cache for holding variables during forward propagation to use them in back prop
+        self.loss = []  # list to store loss values
+        self.batch_y = []  # list of y batched numpy arrays
 
         # TRAINING HYPERPARAMETERS
-        self.iteration = 0 # iterator to index into data for making a batch 
-        self.batch_size = batch_size # batch size 
-        
+        self.iteration = 0  # iterator to index into data for making a batch
+        self.batch_size = batch_size  # batch size
+
         # NEURAL NETWORK INFORMATION
-        self.learning_rate=lr # learning rate
-        self.sample_count = self.y.shape[0] # number of training samples we have
-        self._estimator_type = 'regression'
+        self.learning_rate = lr  # learning rate
+        self.sample_count = self.y.shape[0]  # number of training samples we have
+        self._estimator_type = "regression"
         self.neural_net_type = "Leaky Relu -> Softmax"
 
         # MOMENTUM
         self.use_momentum = use_momentum
-        self.momentum = momentum # momentum factor
-        self.change = {} # dictionary for previous changes for momentum
+        self.momentum = momentum  # momentum factor
+        self.change = {}  # dictionary for previous changes for momentum
 
-
-    def init_parameters(self, param=None): 
-        '''
-        This method initializes the neural network variables, it is already implemented for you. 
+    def init_parameters(self, param=None):
+        """
+        This method initializes the neural network variables, it is already implemented for you.
         Check it and relate to the mathematical description above.
         You are going to use these variables in forward and backward propagation.
 
         Args:
             param (dict): Optional dictionary of parameters to use instead of initializing.
-        '''
+        """
         if param is None:
             np.random.seed(0)
-            self.parameters['theta1'] = np.random.randn(self.dimensions[0], self.dimensions[1]) / np.sqrt(self.dimensions[0]) 
-            self.parameters['b1'] = np.zeros((self.dimensions[1]))        
-            self.parameters['theta2'] = np.random.randn(self.dimensions[1], self.dimensions[2]) / np.sqrt(self.dimensions[1])
-            self.parameters['b2'] = np.zeros((self.dimensions[2]))
+            self.parameters["theta1"] = np.random.randn(
+                self.dimensions[0], self.dimensions[1]
+            ) / np.sqrt(self.dimensions[0])
+            self.parameters["b1"] = np.zeros((self.dimensions[1]))
+            self.parameters["theta2"] = np.random.randn(
+                self.dimensions[1], self.dimensions[2]
+            ) / np.sqrt(self.dimensions[1])
+            self.parameters["b2"] = np.zeros((self.dimensions[2]))
         else:
             self.parameters = param
-            self.parameters['theta1'] = self.parameters['theta1'].T
-            self.parameters['theta2'] = self.parameters['theta2'].T
-            self.parameters['b1'] = self.parameters['b1'].T
-            self.parameters['b2'] = self.parameters['b2'].T
-    
+            self.parameters["theta1"] = self.parameters["theta1"].T
+            self.parameters["theta2"] = self.parameters["theta2"].T
+            self.parameters["b1"] = self.parameters["b1"].T
+            self.parameters["b2"] = self.parameters["b2"].T
 
         for layer in self.parameters:
             self.change[layer] = np.zeros_like(self.parameters[layer])
 
-
     def leaky_relu(self, alpha, u):
-        '''
-        Performs element wise leaky ReLU. 
-        Make sure that all operations here are element wise and can be applied to an input of any dimension. 
+        """
+        Performs element wise leaky ReLU.
+        Make sure that all operations here are element wise and can be applied to an input of any dimension.
         Do not modify the values in the input in-place; make a copy instead.
 
         Args:
@@ -92,40 +103,41 @@ class NeuralNet:
             u (np.ndarray): input with any shape
         Returns:
             o (np.ndarray): output, same shape as input u
-        '''
-        # TODO
-        raise NotImplementedError
-    
+        """
+        copy = np.copy(u)
 
-    def derivative_leaky_relu(self,alpha, u):
-        '''
+        return np.maximum(alpha * copy, copy)
+
+    def derivative_leaky_relu(self, alpha, u):
+        """
         Compute element-wise differentiation of Leaky ReLU.
         Args:
             u (np.ndarray): input of any dimension
             alpha (float): the slope coefficent of the negative part.
         Returns:
             derivative_leaky_relu(u) (np.ndarray)
-        '''
-        # TODO
-        raise NotImplementedError
-    
+        """
+        negativeVals = u < 0
+
+        return np.where(negativeVals, alpha, 1.0)
 
     def softmax(self, u):
-        '''
+        """
         Performs softmax function function element-wise.
         To prevent overflow, begin by subtracting each row in u by its maximum!
         Input:
             u (np.ndarray: (N, 3)): logits
         Output:
             o (np.ndarray: (N, 3)): N probability distributions over D classes
-        '''
-        # TODO
-        raise NotImplementedError
+        """
+        max = np.max(u, axis = 1, keepdims=True)
+        exp = np.exp(u - max)
 
-
+        return exp / np.sum(exp, axis=1, keepdims=True)
+    
     @staticmethod
     def _dropout(u, prob):
-        '''
+        """
         Implement the dropout layer. Refer to the description for implementation details.
         Args:
             u (np.ndarray: (N, D)): input to dropout layer
@@ -133,17 +145,18 @@ class NeuralNet:
         Returns:
             u_after_dropout (np.ndarray: (N, D)): output of dropout layer
             dropout_mask (np.ndarray: (N, D)): dropout mask indicating which units were dropped
-                
-        Hint: scale the units after dropout
-              use np.random.choice to sample from Bernoulli(prob) the inactivated nodes for each iteration  
-        '''
-        # TODO
-        raise NotImplementedError
 
+        Hint: scale the units after dropout
+              use np.random.choice to sample from Bernoulli(prob) the inactivated nodes for each iteration
+        """
+        dropout_mask = (np.random.rand(*u.shape) >= prob).astype(float)
+        u_after_dropout = (dropout_mask * u) / (1 - prob)
+
+        return u_after_dropout, dropout_mask
 
     def cross_entropy_loss(self, y, y_hat):
-        '''
-        Computes cross entropy loss. 
+        """
+        Computes cross entropy loss.
         Refer to the description in the notebook and implement the appropriate mathematical equation.
         To avoid log(0) errors, add a small constant 1e-15 to the input to np.log
         Args:
@@ -151,46 +164,44 @@ class NeuralNet:
             y_hat (np.ndarray: (N, D)): predictions
         Returns:
             loss (float): average cross entropy loss
-        '''
-        # TODO
-        raise NotImplementedError
-    
+        """
+        tinyConstant = 1e-15
+
+        return -np.sum(y * np.log(y_hat + tinyConstant)) / len(y)
 
     def forward(self, x, use_dropout):
-        '''
+        """
         Fill in the missing code lines, please refer to the description for more details.
         Check init_parameters method and use variables from there as well as other implemented methods.
         Refer to the description above and implement the appropriate mathematical equations.
-        Do not change the lines followed by #keep. 
+        Do not change the lines followed by #keep.
 
         Args:
             x (np.ndarray: (N, 8)): input to neural network
             use_dropout (bool): true if using dropout in forward
         Returns:
             o2 (np.ndarray: (N, 3)): output of neural network
-        '''
-        raise NotImplementedError
+        """
+        self.cache["X"] = x
 
-        self.cache['X'] = x
-
-        u1 = None # TODO
-        o1 = None # TODO
-        self.cache['u1'], self.cache['o1'] = u1, o1
+        u1 = np.dot(x, self.parameters["theta1"]) + self.parameters["b1"]
+        o1 = self.leaky_relu(self.alpha, u1)
+        self.cache["u1"], self.cache["o1"] = u1, o1
 
         if use_dropout:
             o1, dropout_mask = self._dropout(o1, prob=self.dropout_prob)
-            self.cache['mask'] = dropout_mask
+            self.cache["mask"] = dropout_mask
 
-        u2 = None # TODO
-        o2 = None # TODO
-        self.cache['u2'], self.cache['o2'] = u2, o2
+        u2 = np.dot(o1, self.parameters["theta2"]) + self.parameters["b2"] 
+        o2 = self.softmax(u2)
+        self.cache["u2"], self.cache["o2"] = u2, o2
         return o2
 
     def update_weights(self, dLoss, use_momentum):
-        '''
-        Update weights of neural network based on learning rate given gradients for each layer. 
+        """
+        Update weights of neural network based on learning rate given gradients for each layer.
         Can also use momentum to smoothen descent.
-        
+
         Args:
             dLoss (dict): dictionary that maps layer names (strings) to gradients (numpy arrays)
             use_momentum (bool): flag to use momentum or not
@@ -200,13 +211,17 @@ class NeuralNet:
 
         HINT: both self.change and self.parameters need to be updated for use_momentum=True and only self.parameters needs to be updated when use_momentum=False
               momentum records are kept in self.change
-        '''
+        """
         # TODO
-        raise NotImplementedError
-
+        for layer, gradient in dLoss.items():
+            if use_momentum:
+                self.change[layer] = self.change[layer] * self.momentum + dLoss[layer]
+                self.parameters[layer] -= self.change[layer] * self.learning_rate
+            else:
+                self.parameters[layer] -= self.learning_rate * gradient
 
     def compute_gradients(self, y, yh, use_dropout):
-        '''
+        """
         Compute the gradients for each layer given the predicted outputs and ground truths.
         The dropout mask you stored at forward may be helpful.
 
@@ -217,38 +232,43 @@ class NeuralNet:
         Returns:
             gradients (dict): dictionary that maps layer names (strings) to gradients (numpy arrays)
 
-        Note: You will have to use the cache (self.cache) to retrieve the values 
+        Note: You will have to use the cache (self.cache) to retrieve the values
         from the forward pass!
 
-        HINT 2: Division by N only needs to occur ONCE for any derivative that requires a division 
-        by N. Make sure you avoid cascading divisions by N where you might accidentally divide your 
-        derivative by N^2 or greater.   
-        '''
-        raise NotImplementedError
-        
-        dLoss_u2 = None
-        dLoss_theta2 = None
-        dLoss_b2 = None
-        dLoss_o1 = None
+        HINT 2: Division by N only needs to occur ONCE for any derivative that requires a division
+        by N. Make sure you avoid cascading divisions by N where you might accidentally divide your
+        derivative by N^2 or greater.
+        """
+        # raise NotImplementedError
+
+        dLoss_u2 = (yh - y)/y.shape[0] 
+        dLoss_theta2 = np.dot(self.cache['o1'].T, dLoss_u2)
+        dLoss_b2 = np.sum(dLoss_u2, axis=0)
+        dLoss_o1 = np.dot(dLoss_u2, self.parameters['theta2'].T)
 
         if use_dropout:
-            dLoss_u1 = None
+            dLoss_u1 = dLoss_o1 * (self.cache["mask"] / (1.0 - self.dropout_prob)) * self.derivative_leaky_relu(self.alpha, self.cache['u1'])
         else:
-            dLoss_u1 = None
+            dLoss_u1 = dLoss_o1 * self.derivative_leaky_relu(self.alpha, self.cache['u1'])
 
-        dLoss_theta1 = None
-        dLoss_b1 = None
-        
-        gradients = {'theta1': dLoss_theta1, 'b1': dLoss_b1, 'theta2': dLoss_theta2, 'b2': dLoss_b2} # KEEP
-        return gradients # KEEP
+        dLoss_theta1 =  np.dot(self.cache['X'].T, dLoss_u1)
+        dLoss_b1 = np.sum(dLoss_u1, axis=0)
 
+        gradients = {
+            "theta1": dLoss_theta1,
+            "b1": dLoss_b1,
+            "theta2": dLoss_theta2,
+            "b2": dLoss_b2,
+        }  # KEEP
+        # print(gradients["theta1"])
+        return gradients  # KEEP
 
     def backward(self, y, yh, use_dropout, use_momentum):
-        '''
+        """
         Fill in the missing code lines, please refer to the description for more details.
         You will need to use cache variables, some of the implemented methods, and other variables as well.
         Refer to the description above and implement the appropriate mathematical equations.
-        Do not change the lines followed by #keep.  
+        Do not change the lines followed by #keep.
 
         Args:
             y (np.ndarray: (N, 3)): ground truth labels
@@ -263,93 +283,101 @@ class NeuralNet:
             dLoss_b1 (np.ndarray: (15,)): gradients for b1
 
         Hint: make calls to compute_gradients and update_weights
-        '''    
-        # TODO
-        raise NotImplementedError
-
-
-    def gradient_descent(self, x, y, iter = 60000, use_momentum=False, local_test=False):
-        '''
+        """
+        loss = self.compute_gradients(y, yh, use_dropout)
+        self.update_weights(loss, use_momentum)
+        return loss["theta2"], loss["b2"], loss["theta1"], loss["b1"]
+    
+    def gradient_descent(self, x, y, iter=60000, use_momentum=False, local_test=False):
+        """
         This function is an implementation of the gradient descent algorithm.
         Notes:
-        1. GD considers all examples in the dataset in one go and learns a gradient from them. 
-        2. One iteration here is one round of forward and backward propagation on the complete dataset. 
+        1. GD considers all examples in the dataset in one go and learns a gradient from them.
+        2. One iteration here is one round of forward and backward propagation on the complete dataset.
         3. Append loss at multiples of 1000 i.e. at 0th, 1000th, 2000th .... iterations to self.loss
         **For LOCAL TEST append and print out loss at every iteration instead of every 1000th multiple.
 
         Args:
-            x (np.ndarray: D x N): input
-            y (np.ndarray: 1 x N): ground truth labels
+            x (np.ndarray: N x D): input
+            y (np.ndarray: N x 3): ground truth labels
             iter (int): number of iterations to train for
             use_momentum (bool): flag to use momentum or not
             local_test (bool): flag to indicate if local test is being run or not
-        ''' 
-        raise NotImplementedError
+        """
+        # raise NotImplementedError
 
         self.init_parameters()
-        
+
         for i in range(iter):
             # TODO: implement training loop
-
+            yh = self.forward(x, False)
+            loss = self.cross_entropy_loss(y, yh)
+            self.backward(y, yh, False, use_momentum)
             # Print every one iteration for local test, and every 1000th iteration for AG and 1.3
             print_multiple = 1 if local_test else 1000
             if i % print_multiple == 0:
-                print ("Loss after iteration %i: %f" %(i, loss))
+                print("Loss after iteration %i: %f" % (i, loss))
                 self.loss.append(loss)
-       
-    
-    #bonus for undergraduate students 
-    def batch_gradient_descent(self, x, y, use_momentum, iter = 60000, local_test=False):
-        '''
+
+    # bonus for undergraduate students
+    def batch_gradient_descent(self, x, y, use_momentum, iter=60000, local_test=False):
+        """
         This function is an implementation of the batch gradient descent algorithm
 
-        Notes: 
-        1. Batch GD loops over all mini batches in the dataset one by one and learns a gradient 
-        2. One iteration here is one round of forward and backward propagation on one minibatch. 
+        Notes:
+        1. Batch GD loops over all mini batches in the dataset one by one and learns a gradient
+        2. One iteration here is one round of forward and backward propagation on one minibatch.
            You will use self.iteration and self.batch_size to index into x and y to get a batch. This batch will be
            fed into the forward and backward functions.
 
-        3. Append and printout loss at multiples of 1000 iterations i.e. at 0th, 1000th, 2000th .... iterations. 
+        3. Append and printout loss at multiples of 1000 iterations i.e. at 0th, 1000th, 2000th .... iterations.
            **For LOCAL TEST append and print out loss at every iteration instead of every 1000th multiple.
 
-        4. Append the y batched numpy array to self.batch_y at every 1000 iterations i.e. at 0th, 1000th, 
+        4. Append the y batched numpy array to self.batch_y at every 1000 iterations i.e. at 0th, 1000th,
            2000th .... iterations. We will use this to determine if batching is done correctly.
            **For LOCAL TEST append the y batched array at every iteration instead of every 1000th multiple
 
-        5. We expect a noisy plot since learning on a batch adds variance to the 
+        5. We expect a noisy plot since learning on a batch adds variance to the
            gradients learnt
-        6. Be sure that your batch size remains constant (see notebook for more detail). Please 
-           batch your data in a wraparound manner. For example, given a dataset of 9 numbers, 
-           [1, 2, 3, 4, 5, 6, 7, 8, 9], and a batch size of 6, the first iteration batch will 
-           be [1, 2, 3, 4, 5, 6], the second iteration batch will be [7, 8, 9, 1, 2, 3], 
-           the third iteration batch will be [4, 5, 6, 7, 8, 9], etc... 
+        6. Be sure that your batch size remains constant (see notebook for more detail). Please
+           batch your data in a wraparound manner. For example, given a dataset of 9 numbers,
+           [1, 2, 3, 4, 5, 6, 7, 8, 9], and a batch size of 6, the first iteration batch will
+           be [1, 2, 3, 4, 5, 6], the second iteration batch will be [7, 8, 9, 1, 2, 3],
+           the third iteration batch will be [4, 5, 6, 7, 8, 9], etc...
 
         Args:
-            x (np.ndarray: D x N): input data
-            y (np.ndarray: 1 x N): ground truth labels
+            x (np.ndarray: N x D): input data
+            y (np.ndarray: N x 3): ground truth labels
             use_momentum (bool): flag to use momentum or not
             iter (int): number of BATCHES to iterate through
-            local_test (bool): True if calling local test, default False for autograder and Q1.3 
+            local_test (bool): True if calling local test, default False for autograder and Q1.3
                     this variable can be used to switch between autograder and local test requirement for
                     appending/printing out loss and y batch arrays
-        '''
-        raise NotImplementedError
+        """
+        # raise NotImplementedError
 
         self.init_parameters()
-        
+
         for i in range(iter):
             # TODO: implement training loop
+            lenX = len(x)
+            startInd = (self.batch_size * i) % lenX
+            endInd = (self.batch_size + startInd) % lenX
+            x_batch = x[startInd:endInd]
+            y_batch = y[startInd:endInd]
 
+            yh = self.forward(x_batch, False)
+            loss = self.cross_entropy_loss(y_batch, yh)
+            self.backward(y_batch, yh, False, use_momentum)
             # Print every one iteration for local test, and every 1000th iteration for AG and 1.3
-            print_multiple = 1 if local_test else 1000 #keep
-            if i % print_multiple == 0: #keep
-                print ("Loss after iteration %i: %f" %(i, loss)) #keep
-                self.loss.append(loss) #keep
-                self.batch_y.append(y_batch) #keep
-
-
-    def predict(self, x): 
-        '''
+            print_multiple = 1 if local_test else 1000  # keep
+            if i % print_multiple == 0:  # keep
+                print("Loss after iteration %i: %f" % (i, loss))  # keep
+                self.loss.append(loss)  # keep
+                self.batch_y.append(y_batch)  # keep
+                
+    def predict(self, x):
+        """
         This function predicts new data points
         It is implemented for you
 
@@ -357,7 +385,7 @@ class NeuralNet:
             x (np.ndarray: (N, 8)): input data
         Returns:
             y (np.ndarray: (N)): predictions
-        '''
-        yh = self.forward(x, False) # (N, 3) = forward((N, 8))
-        pred = np.argmax(yh, axis=1) # (N,) = argmax((N, 3), axis=1)
+        """
+        yh = self.forward(x, False)  # (N, 3) = forward((N, 8))
+        pred = np.argmax(yh, axis=1)  # (N,) = argmax((N, 3), axis=1)
         return pred
