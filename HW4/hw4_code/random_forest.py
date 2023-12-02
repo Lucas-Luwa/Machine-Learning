@@ -109,9 +109,20 @@ class RandomForest(object):
         Returns:
             None. Calling this function should simply display the aforementioned feature importance bar chart
         """
-        # TODO
-        raise NotImplementedError
-    
+        treeFeatImp = self.decision_trees[0].feature_importances_
+
+        featAxisName = data_train.columns
+
+        revInd = np.argsort(treeFeatImp)[::-1]
+
+        plt.figure(figsize=(10, 6))
+        plt.bar(range(len(revInd)), treeFeatImp[revInd], align="center")
+        plt.xticks(range(len(revInd)), featAxisName[revInd], rotation='vertical')  
+        plt.ylabel("Feature Importance")
+        plt.xlabel("Features")
+        plt.title("Feature Importance for Decision Tree")
+        plt.show()
+
 
     def select_hyperparameters(self):
         """
